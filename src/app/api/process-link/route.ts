@@ -9,9 +9,12 @@ interface FileItem {
   isVideo?: boolean
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('Processing link request:', body) // Log incoming request
     const { url, userId } = body
 
     // Validate input
@@ -71,10 +74,16 @@ export async function POST(request: NextRequest) {
       expiresIn: 5,
       linkId: link.id
     })
-  } catch (error) {
-    console.error('Process link error:', error)
+  } catch (error: any) {
+    console.error('Process link detailed error:', error)
+    // Log stack trace if available
+    if (error.stack) console.error(error.stack)
+
     return NextResponse.json(
-      { error: 'Failed to process link' },
+      {
+        error: 'Failed to process link',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     )
   }
@@ -87,16 +96,16 @@ async function extractFilesFromUrl(url: string): Promise<Omit<FileItem, 'downloa
   // 1. Fetch the URL content
   // 2. Parse the HTML or API response
   // 3. Extract file information
-  
+
   // Detect the platform
   const isTerabox = url.includes('terabox.com')
   const isDiskwala = url.includes('diskwala.com')
   const isFolder = url.includes('folder') || url.includes('s/') || url.includes('/share/')
-  
+
   if (isFolder) {
     // Return multiple files for folder links
     const platform = isTerabox ? 'Terabox' : isDiskwala ? 'Diskwala' : 'Cloud'
-    
+
     return [
       {
         name: `[${platform}] Movie - Part 1.mp4`,
@@ -127,11 +136,11 @@ async function extractFilesFromUrl(url: string): Promise<Omit<FileItem, 'downloa
     // Return single file for direct links
     const platform = isTerabox ? 'Terabox' : isDiskwala ? 'Diskwala' : 'Cloud'
     const isVideo = url.includes('video') || url.includes('movie') || url.includes('.mp4') || url.includes('.mkv')
-    
+
     return [
       {
-        name: isVideo 
-          ? `[${platform}] Video File.mp4` 
+        name: isVideo
+          ? `[${platform}] Video File.mp4`
           : `[${platform}] File.zip`,
         size: isVideo ? '1.2 GB' : '450.5 MB',
         url: url,
