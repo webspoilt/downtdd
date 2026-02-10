@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -38,8 +40,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check premium status
-    const isPremiumActive = user.isPremium && 
-      user.premiumExpires && 
+    const isPremiumActive = user.isPremium &&
+      user.premiumExpires &&
       new Date(user.premiumExpires) > new Date()
 
     // Return user without password
